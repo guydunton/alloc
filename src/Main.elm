@@ -134,7 +134,19 @@ update msg model =
                     model
 
         EditGroup index groupText ->
-            Debug.todo "branch 'EditGroup _ _' not implemented"
+            let
+                addGroupForIndexed i animal =
+                    if index == i then
+                        { animal | group = String.toInt groupText }
+
+                    else
+                        animal
+
+                newAnimals =
+                    model.animals
+                        |> List.indexedMap addGroupForIndexed
+            in
+            { model | animals = newAnimals }
 
 
 view : Model -> Html Msg
@@ -160,6 +172,7 @@ view model =
                 ]
             , button [ onClick AddAnimal ] [ text "Add" ]
             ]
+        , div [] []
         ]
 
 
@@ -174,6 +187,7 @@ viewAnimals animals =
                 , th [] [ text "Dam ID" ]
                 , th [] [ text "Gender" ]
                 , th [] [ text "Group" ]
+                , th [] [ text "Set Group" ]
                 ]
             ]
         |> table []
@@ -204,6 +218,7 @@ viewAnimal index animal =
                         "Female"
                 )
             ]
+        , td [] [ text group ]
         , td [] [ input [ onInput (EditGroup index), value group ] [] ]
         ]
 
