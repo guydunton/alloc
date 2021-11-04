@@ -39,11 +39,19 @@ type alias Model =
 type Msg
     = UpdateAnimalField Fields String
     | AddAnimal
+    | EditGroup Int String
 
 
 init : Model
 init =
-    { animals = []
+    { animals =
+        [ { bodyweight = 1.0
+          , supplierId = "m1"
+          , damId = "d1"
+          , sex = Male
+          , group = Nothing
+          }
+        ]
     , currentBodyWeight = ""
     , currentSupplierId = ""
     , currentDamId = ""
@@ -125,6 +133,9 @@ update msg model =
                 _ ->
                     model
 
+        EditGroup index groupText ->
+            Debug.todo "branch 'EditGroup _ _' not implemented"
+
 
 view : Model -> Html Msg
 view model =
@@ -155,20 +166,30 @@ view model =
 viewAnimals : List Animal -> Html Msg
 viewAnimals animals =
     animals
-        |> List.map viewAnimal
+        |> List.indexedMap viewAnimal
         |> List.append
             [ tr []
                 [ th [] [ text "Bodyweight" ]
                 , th [] [ text "Supplier ID" ]
                 , th [] [ text "Dam ID" ]
                 , th [] [ text "Gender" ]
+                , th [] [ text "Group" ]
                 ]
             ]
         |> table []
 
 
-viewAnimal : Animal -> Html Msg
-viewAnimal animal =
+viewAnimal : Int -> Animal -> Html Msg
+viewAnimal index animal =
+    let
+        group =
+            case animal.group of
+                Just grp ->
+                    String.fromInt grp
+
+                _ ->
+                    ""
+    in
     tr []
         [ td [] [ text <| String.fromFloat animal.bodyweight ]
         , td [] [ text animal.supplierId ]
@@ -183,6 +204,7 @@ viewAnimal animal =
                         "Female"
                 )
             ]
+        , td [] [ input [ onInput (EditGroup index), value group ] [] ]
         ]
 
 
