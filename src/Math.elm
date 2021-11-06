@@ -10,14 +10,19 @@ roundTo dp val =
     toFloat (round (val * factor)) / factor
 
 
-standardDeviation : List Int -> Float
+meanF : List Float -> Float
+meanF vals =
+    List.sum vals / toFloat (List.length vals)
+
+
+standardDeviation : List Float -> Float
 standardDeviation vals =
     let
         mean =
-            toFloat (List.sum vals) / toFloat (List.length vals)
+            meanF vals
 
         standardSum =
-            vals |> List.map toFloat |> List.map (\x -> (x - mean) * (x - mean)) |> List.sum
+            vals |> List.map (\x -> (x - mean) * (x - mean)) |> List.sum
 
         sizeMinus1 =
             List.length vals - 1 |> toFloat

@@ -1,14 +1,11 @@
 module Main exposing (..)
 
+import Animal exposing (Animal, Sex(..), sexToString, starterAnimals, textToSex)
 import Browser exposing (sandbox)
 import Html exposing (Html, button, div, h1, h2, input, option, select, table, td, text, th, tr)
 import Html.Attributes exposing (value)
 import Html.Events exposing (onClick, onInput)
-
-
-type Sex
-    = Male
-    | Female
+import StandardDeviationTable exposing (standardDeviationTable)
 
 
 type Fields
@@ -16,15 +13,6 @@ type Fields
     | SupplierId
     | DamId
     | Gender
-
-
-type alias Animal =
-    { bodyweight : Float
-    , supplierId : String
-    , damId : String
-    , sex : Sex
-    , group : Maybe Int
-    }
 
 
 type alias Model =
@@ -44,42 +32,12 @@ type Msg
 
 init : Model
 init =
-    { animals =
-        [ { bodyweight = 1.0
-          , supplierId = "m1"
-          , damId = "d1"
-          , sex = Male
-          , group = Nothing
-          }
-        ]
+    { animals = starterAnimals
     , currentBodyWeight = ""
     , currentSupplierId = ""
     , currentDamId = ""
     , currentGender = Just Male
     }
-
-
-sexToString : Sex -> String
-sexToString sex =
-    case sex of
-        Male ->
-            "Male"
-
-        Female ->
-            "Female"
-
-
-textToSex : String -> Maybe Sex
-textToSex text =
-    case text of
-        "Male" ->
-            Just Male
-
-        "Female" ->
-            Just Female
-
-        _ ->
-            Nothing
 
 
 convertModelToAnimal : Model -> Maybe Animal
@@ -172,7 +130,10 @@ view model =
                 ]
             , button [ onClick AddAnimal ] [ text "Add" ]
             ]
-        , div [] []
+        , div []
+            [ h2 [] [ text "Standard deviations" ]
+            , standardDeviationTable model.animals
+            ]
         ]
 
 
