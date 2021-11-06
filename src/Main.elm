@@ -29,6 +29,7 @@ type Msg
     = UpdateAnimalField Fields String
     | AddAnimal
     | EditGroup Int String
+    | RemoveAnimal Int
 
 
 init : Model
@@ -106,6 +107,21 @@ update msg model =
                         |> List.indexedMap addGroupForIndexed
             in
             { model | animals = newAnimals }
+
+        RemoveAnimal index ->
+            { model | animals = removeAt index model.animals }
+
+
+removeAt : Int -> List a -> List a
+removeAt index vals =
+    let
+        front =
+            List.take index vals
+
+        end =
+            List.drop (index + 1) vals
+    in
+    List.append front end
 
 
 view : Model -> Html Msg
@@ -186,6 +202,7 @@ viewAnimal index animal =
             ]
         , td [] [ text group ]
         , td [] [ input [ onInput (EditGroup index), value group ] [] ]
+        , td [] [ button [ onClick (RemoveAnimal index) ] [ text "Del" ] ]
         ]
 
 
