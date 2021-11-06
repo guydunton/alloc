@@ -3,20 +3,7 @@ module StandardDeviationTable exposing (..)
 import Animal exposing (Animal)
 import Html exposing (Html, table, td, text, tr)
 import Math exposing (meanF, roundTo, standardDeviation)
-
-
-unique : List a -> List a
-unique l =
-    let
-        incUnique : a -> List a -> List a
-        incUnique elem lst =
-            if List.member elem lst then
-                lst
-
-            else
-                elem :: lst
-    in
-    List.foldr incUnique [] l
+import Unique exposing (unique)
 
 
 standardDeviationTable : List Animal -> Html a

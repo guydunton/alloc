@@ -2,6 +2,7 @@ module Main exposing (..)
 
 import Animal exposing (Animal, Sex(..), sexToString, starterAnimals, textToSex)
 import Browser exposing (sandbox)
+import DamConflictTable exposing (damConflictTable)
 import Html exposing (Html, button, div, h1, h2, input, option, select, table, td, text, th, tr)
 import Html.Attributes exposing (value)
 import Html.Events exposing (onClick, onInput)
@@ -133,6 +134,10 @@ view model =
         , div []
             [ h2 [] [ text "Standard deviations" ]
             , standardDeviationTable model.animals
+            ]
+        , div []
+            [ h2 [] [ text "Conflicing groups" ]
+            , damConflictTable model.animals
             ]
         ]
 
