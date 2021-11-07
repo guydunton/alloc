@@ -1,11 +1,13 @@
 module Main exposing (..)
 
-import Animal exposing (Animal, Sex(..), sexToString, starterAnimals, textToSex)
-import Browser exposing (sandbox)
+import Animal exposing (Animal, starterAnimals)
+import Browser
 import DamConflictTable exposing (damConflictTable)
+import Gender exposing (Gender(..), genderToString, textToGender)
 import Html exposing (Html, button, div, h1, h2, input, option, select, table, td, text, th, tr)
 import Html.Attributes exposing (value)
 import Html.Events exposing (onClick, onInput)
+import IO exposing (IOMsg, IOOutput(..), fileUpdate, ioDownloadFile, ioRequestFile)
 import StandardDeviationTable exposing (standardDeviationTable)
 
 
@@ -21,7 +23,7 @@ type alias Model =
     , currentBodyWeight : String
     , currentSupplierId : String
     , currentDamId : String
-    , currentGender : Maybe Sex
+    , currentGender : Maybe Gender
     }
 
 
@@ -30,16 +32,19 @@ type Msg
     | AddAnimal
     | EditGroup Int String
     | RemoveAnimal Int
+    | IOAction IOMsg
 
 
-init : Model
-init =
-    { animals = starterAnimals
-    , currentBodyWeight = ""
-    , currentSupplierId = ""
-    , currentDamId = ""
-    , currentGender = Just Male
-    }
+init : () -> ( Model, Cmd Msg )
+init _ =
+    ( { animals = starterAnimals
+      , currentBodyWeight = ""
+      , currentSupplierId = ""
+      , currentDamId = ""
+      , currentGender = Just Male
+      }
+    , Cmd.none
+    )
 
 
 convertModelToAnimal : Model -> Maybe Animal
@@ -54,7 +59,7 @@ convertModelToAnimal model =
                 { bodyweight = weight
                 , supplierId = model.currentSupplierId
                 , damId = model.currentDamId
-                , sex = gender
+                , gender = gender
                 , group = Nothing
                 }
 
@@ -62,36 +67,42 @@ convertModelToAnimal model =
             Nothing
 
 
-update : Msg -> Model -> Model
+update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
         UpdateAnimalField field text ->
-            case field of
-                BodyWeight ->
-                    { model | currentBodyWeight = text }
+            let
+                newModel =
+                    case field of
+                        BodyWeight ->
+                            { model | currentBodyWeight = text }
 
-                SupplierId ->
-                    { model | currentSupplierId = text }
+                        SupplierId ->
+                            { model | currentSupplierId = text }
 
-                DamId ->
-                    { model | currentDamId = text }
+                        DamId ->
+                            { model | currentDamId = text }
 
-                Gender ->
-                    { model | currentGender = textToSex text }
+                        Gender ->
+                            { model | currentGender = textToGender text }
+            in
+            ( newModel, Cmd.none )
 
         AddAnimal ->
             case convertModelToAnimal model of
                 Just animal ->
-                    { model
+                    ( { model
                         | animals = animal :: model.animals
                         , currentBodyWeight = ""
                         , currentDamId = ""
                         , currentSupplierId = ""
                         , currentGender = Just Male
-                    }
+                      }
+                    , Cmd.none
+                    )
 
                 _ ->
-                    model
+                    ( model, Cmd.none )
 
         EditGroup index groupText ->
             let
@@ -106,10 +117,22 @@ update msg model =
                     model.animals
                         |> List.indexedMap addGroupForIndexed
             in
-            { model | animals = newAnimals }
+            ( { model | animals = newAnimals }, Cmd.none )
 
         RemoveAnimal index ->
-            { model | animals = removeAt index model.animals }
+            ( { model | animals = removeAt index model.animals }, Cmd.none )
+
+        IOAction ioMsg ->
+            let
+                ioResult =
+                    fileUpdate ioMsg model.animals
+            in
+            case ioResult of
+                ( LoadedAnimals newAnimals, ioCmd ) ->
+                    ( { model | animals = newAnimals }, ioCmd |> Cmd.map IOAction )
+
+                ( Noop, ioCmd ) ->
+                    ( model, ioCmd |> Cmd.map IOAction )
 
 
 removeAt : Int -> List a -> List a
@@ -128,13 +151,18 @@ view : Model -> Html Msg
 view model =
     let
         currentGenderString =
-            model.currentGender |> Maybe.map sexToString |> Maybe.withDefault ""
+            model.currentGender |> Maybe.map genderToString |> Maybe.withDefault ""
     in
     div []
         [ h1 []
             [ text "Allocation" ]
         , div []
-            [ viewAnimals model.animals
+            [ button [ onClick (IOAction ioDownloadFile) ] [ text "Save to file" ]
+            , button [ onClick (IOAction ioRequestFile) ] [ text "Load file" ]
+            ]
+        , div []
+            [ h2 [] [ text "Animals" ]
+            , viewAnimals model.animals
             ]
         , div []
             [ h2 [] [ text "Add animals" ]
@@ -187,19 +215,10 @@ viewAnimal index animal =
                     ""
     in
     tr []
-        [ td [] [ text <| String.fromFloat animal.bodyweight ]
+        [ td [] [ text (String.fromFloat animal.bodyweight) ]
         , td [] [ text animal.supplierId ]
         , td [] [ text animal.damId ]
-        , td []
-            [ text
-                (case animal.sex of
-                    Male ->
-                        "Male"
-
-                    Female ->
-                        "Female"
-                )
-            ]
+        , td [] [ text (genderToString animal.gender) ]
         , td [] [ text group ]
         , td [] [ input [ onInput (EditGroup index), value group ] [] ]
         , td [] [ button [ onClick (RemoveAnimal index) ] [ text "Del" ] ]
@@ -208,8 +227,14 @@ viewAnimal index animal =
 
 main : Program () Model Msg
 main =
-    sandbox
+    Browser.element
         { init = init
         , update = update
         , view = view
+        , subscriptions = subscriptions
         }
+
+
+subscriptions : Model -> Sub Msg
+subscriptions _ =
+    Sub.none
