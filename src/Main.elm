@@ -1,7 +1,7 @@
 module Main exposing (..)
 
 import Animal exposing (Animal, starterAnimals)
-import Browser exposing (Document)
+import Browser
 import DamConflictTable exposing (damConflictTable)
 import Gender exposing (Gender(..), genderToString, textToGender)
 import Html exposing (Html, button, div, h1, h2, input, option, select, table, td, text, th, tr)
