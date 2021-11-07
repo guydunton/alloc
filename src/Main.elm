@@ -1,7 +1,7 @@
 module Main exposing (..)
 
 import Animal exposing (Animal, starterAnimals)
-import Browser
+import Browser exposing (Document)
 import DamConflictTable exposing (damConflictTable)
 import Gender exposing (Gender(..), genderToString, textToGender)
 import Html exposing (Html, button, div, h1, h2, input, option, select, table, td, text, th, tr)
@@ -147,13 +147,14 @@ removeAt index vals =
     List.append front end
 
 
-view : Model -> Html Msg
+view : Model -> Browser.Document Msg
 view model =
     let
         currentGenderString =
             model.currentGender |> Maybe.map genderToString |> Maybe.withDefault ""
     in
-    div []
+    { title = "Allocation"
+    , body =
         [ h1 []
             [ text "Allocation" ]
         , div []
@@ -184,6 +185,7 @@ view model =
             , damConflictTable model.animals
             ]
         ]
+    }
 
 
 viewAnimals : List Animal -> Html Msg
@@ -227,7 +229,7 @@ viewAnimal index animal =
 
 main : Program () Model Msg
 main =
-    Browser.element
+    Browser.document
         { init = init
         , update = update
         , view = view
