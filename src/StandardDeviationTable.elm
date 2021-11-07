@@ -1,7 +1,7 @@
 module StandardDeviationTable exposing (..)
 
 import Animal exposing (Animal)
-import Html exposing (Html, table, td, text, tr)
+import Html exposing (Html, table, td, text, th, tr)
 import Math exposing (meanF, roundTo, standardDeviation)
 import Unique exposing (unique)
 
@@ -18,7 +18,7 @@ standardDeviationTable animals =
         headingRow =
             tr []
                 (headings
-                    |> List.map (\h -> td [] [ text h ])
+                    |> List.map (\h -> th [] [ text h ])
                 )
 
         groupBodyweights group =

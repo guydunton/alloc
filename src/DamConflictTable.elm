@@ -1,7 +1,7 @@
 module DamConflictTable exposing (..)
 
 import Animal exposing (Animal)
-import Html exposing (Html, table, td, text, tr)
+import Html exposing (Html, table, td, text, th, tr)
 import Unique exposing (unique)
 
 
@@ -72,7 +72,7 @@ damConflictTable animals =
 
         headingsRow =
             [ "Dam ID", "Siblings", "Group" ]
-                |> List.map (\h -> td [] [ text h ])
+                |> List.map (\h -> th [] [ text h ])
                 |> tr []
 
         siblingRows =
