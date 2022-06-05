@@ -1,21 +1,22 @@
 module Main exposing (..)
 
 import Animal exposing (Animal, starterAnimals)
+import BatchData exposing (BatchData, BatchDataMsg, defaultBatchData, firstBatchName, updateBatchData, updateBatchNames, viewBatchData)
 import Browser
 import DamConflictTable exposing (damConflictTable)
-import Gender exposing (Gender(..), genderToString, textToGender)
 import Html exposing (Html, button, div, h1, h2, input, option, select, table, td, text, th, tr)
 import Html.Attributes exposing (value)
 import Html.Events exposing (onClick, onInput)
 import IO exposing (IOMsg, IOOutput(..), fileUpdate, ioDownloadFile, ioRequestFile)
 import StandardDeviationTable exposing (standardDeviationTable)
+import Unique exposing (unique)
 
 
 type Fields
     = BodyWeight
     | SupplierId
     | DamId
-    | Gender
+    | Batch
 
 
 type alias Model =
@@ -23,7 +24,8 @@ type alias Model =
     , currentBodyWeight : String
     , currentSupplierId : String
     , currentDamId : String
-    , currentGender : Maybe Gender
+    , currentBatch : String
+    , batchData : BatchData
     }
 
 
@@ -33,6 +35,7 @@ type Msg
     | EditGroup Int String
     | RemoveAnimal Int
     | IOAction IOMsg
+    | BatchUpdate BatchDataMsg
 
 
 init : () -> ( Model, Cmd Msg )
@@ -41,7 +44,8 @@ init _ =
       , currentBodyWeight = ""
       , currentSupplierId = ""
       , currentDamId = ""
-      , currentGender = Just Male
+      , currentBatch = ""
+      , batchData = defaultBatchData
       }
     , Cmd.none
     )
@@ -53,13 +57,13 @@ convertModelToAnimal model =
         bodyWeight =
             model.currentBodyWeight |> String.toFloat
     in
-    case ( bodyWeight, model.currentGender ) of
-        ( Just weight, Just gender ) ->
+    case bodyWeight of
+        Just weight ->
             Just
                 { bodyweight = weight
                 , supplierId = model.currentSupplierId
                 , damId = model.currentDamId
-                , gender = gender
+                , batch = model.currentBatch
                 , group = Nothing
                 }
 
@@ -83,8 +87,8 @@ update msg model =
                         DamId ->
                             { model | currentDamId = text }
 
-                        Gender ->
-                            { model | currentGender = textToGender text }
+                        Batch ->
+                            { model | currentBatch = text }
             in
             ( newModel, Cmd.none )
 
@@ -96,7 +100,7 @@ update msg model =
                         , currentBodyWeight = ""
                         , currentDamId = ""
                         , currentSupplierId = ""
-                        , currentGender = Just Male
+                        , currentBatch = Maybe.withDefault "" (firstBatchName model.batchData)
                       }
                     , Cmd.none
                     )
@@ -129,10 +133,22 @@ update msg model =
             in
             case ioResult of
                 ( LoadedAnimals newAnimals, ioCmd ) ->
-                    ( { model | animals = newAnimals }, ioCmd |> Cmd.map IOAction )
+                    ( { model | animals = newAnimals, batchData = createBatchesFromAnimals newAnimals model.batchData }, ioCmd |> Cmd.map IOAction )
 
                 ( Noop, ioCmd ) ->
                     ( model, ioCmd |> Cmd.map IOAction )
+
+        BatchUpdate batchMsg ->
+            ( { model | batchData = updateBatchData batchMsg model.batchData }, Cmd.none )
+
+
+createBatchesFromAnimals : List Animal -> BatchData -> BatchData
+createBatchesFromAnimals animals batchData =
+    let
+        batchNames =
+            animals |> List.map (\a -> a.batch) |> unique
+    in
+    updateBatchNames batchNames batchData
 
 
 removeAt : Int -> List a -> List a
@@ -149,10 +165,6 @@ removeAt index vals =
 
 view : Model -> Browser.Document Msg
 view model =
-    let
-        currentGenderString =
-            model.currentGender |> Maybe.map genderToString |> Maybe.withDefault ""
-    in
     { title = "Allocation"
     , body =
         [ h1 []
@@ -161,6 +173,7 @@ view model =
             [ button [ onClick (IOAction ioDownloadFile) ] [ text "Save to file" ]
             , button [ onClick (IOAction ioRequestFile) ] [ text "Load file" ]
             ]
+        , viewBatchData model.batchData |> Html.map (\x -> BatchUpdate x)
         , div []
             [ h2 [] [ text "Animals" ]
             , viewAnimals model.animals
@@ -170,10 +183,11 @@ view model =
             , input [ onInput (UpdateAnimalField BodyWeight), value model.currentBodyWeight ] []
             , input [ onInput (UpdateAnimalField SupplierId), value model.currentSupplierId ] []
             , input [ onInput (UpdateAnimalField DamId), value model.currentDamId ] []
-            , select [ onInput (UpdateAnimalField Gender), value currentGenderString ]
-                [ option [] [ text "Male" ]
-                , option [] [ text "Female" ]
-                ]
+            , select [ onInput (UpdateAnimalField Batch), value model.currentBatch ]
+                (BatchData.getBatchNames
+                    model.batchData
+                    |> List.map (\n -> option [] [ text n ])
+                )
             , button [ onClick AddAnimal ] [ text "Add" ]
             ]
         , div []
@@ -220,10 +234,10 @@ viewAnimal index animal =
         [ td [] [ text (String.fromFloat animal.bodyweight) ]
         , td [] [ text animal.supplierId ]
         , td [] [ text animal.damId ]
-        , td [] [ text (genderToString animal.gender) ]
+        , td [] [ text animal.batch ]
         , td [] [ text group ]
         , td [] [ input [ onInput (EditGroup index), value group ] [] ]
-        , td [] [ button [ onClick (RemoveAnimal index) ] [ text "Del" ] ]
+        , td [] [ button [ onClick (RemoveAnimal index) ] [ text "-" ] ]
         ]
 
 
