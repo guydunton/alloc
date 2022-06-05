@@ -74,7 +74,7 @@ updateBatchData msg model =
             { model | batches = model.batches ++ [ { name = model.newBatchText } ], newBatchText = "" }
 
         UpdateNewBatchText text ->
-            { model | newBatchText = Debug.log ("UpdatedText with: " ++ text) text }
+            { model | newBatchText = text }
 
 
 viewBatchData : BatchData -> Html BatchDataMsg
